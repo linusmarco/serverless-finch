@@ -1,17 +1,23 @@
 const Serverless = require('serverless');
 const FinchClient = require('../index');
 
+const BbPromise = require('bluebird');
+jest.mock('bluebird');
+
 const hlp = require('./resources/helpers');
+
+const bucketUtils = require('../lib/bucketUtils');
+jest.mock('../lib/bucketUtils');
+
+const uploadDirectory = require('../lib/upload');
+jest.mock('../lib/upload');
 
 const validateClient = require('../lib/validate');
 jest.mock('../lib/validate');
 
-const BbPromise = require('bluebird');
-jest.mock('bluebird');
-
 describe('Client', () => {
   let serverless;
-  let serverlessFinch;
+  let pluginInstance;
 
   beforeEach(() => {
     serverless = new Serverless();
@@ -121,6 +127,9 @@ describe('Client', () => {
 
   describe('#_removeDeployedResources', () => {
     beforeEach(() => {
+      const simpleConfig = hlp.readTestConfig('valid/simple');
+      serverless = new Serverless(simpleConfig);
+      pluginInstance = new FinchClient(serverless, undefined);
       pluginInstance._validateConfig = jest.fn();
     });
 
@@ -129,6 +138,8 @@ describe('Client', () => {
 
       expect(pluginInstance._validateConfig).toHaveBeenCalledTimes(1);
     });
+
+    // it('should wait 3 seconds before deleting', () => {});
 
     // it('should', () => {
     //   hlp.readTestConfig('valid/simple');

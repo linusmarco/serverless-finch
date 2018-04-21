@@ -18,4 +18,10 @@ describe('#readTestConfig', () => {
       }
     });
   });
+
+  it('should throw an error if specified test config does not exist', () => {
+    expect(() => {
+      hlp.readTestConfig('THIS_IS_NOT_A_TEST_CONFIG');
+    }).toThrow();
+  });
 });
