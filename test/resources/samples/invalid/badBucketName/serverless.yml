@@ -1,0 +1,12 @@
+service: valid-simple
+
+provider:
+  name: aws
+  region: us-east-1
+
+plugins:
+  - serverless-finch
+
+custom:
+  client:
+    bucketNameMispelled: invalid-simple
