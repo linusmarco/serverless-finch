@@ -4,6 +4,9 @@ const FinchClient = require('../index');
 const BbPromise = require('bluebird');
 jest.mock('bluebird');
 
+const Confirm = require('prompt-confirm');
+jest.mock('prompt-confirm');
+
 const hlp = require('./resources/helpers');
 
 const bucketUtils = require('../lib/bucketUtils');
@@ -127,16 +130,43 @@ describe('Client', () => {
 
   describe('#_removeDeployedResources', () => {
     beforeEach(() => {
-      const simpleConfig = hlp.readTestConfig('valid/simple');
-      serverless = new Serverless(simpleConfig);
+      jest.resetAllMocks();
+
+      serverless = new Serverless();
       pluginInstance = new FinchClient(serverless, undefined);
+
+      // serverless doesn't actually set options til hooks are called so need to set them here
+      const simpleConfig = hlp.readTestConfig('valid/simple');
+      pluginInstance.options = simpleConfig;
       pluginInstance._validateConfig = jest.fn();
+      pluginInstance.error = jest.fn();
+
+      Confirm.mockImplementation(function() {
+        this.run = jest.fn(() => Promise.resolve(true));
+      });
     });
 
     it('should validate config', () => {
       pluginInstance._removeDeployedResources();
 
       expect(pluginInstance._validateConfig).toHaveBeenCalledTimes(1);
+    });
+
+    it('should throw error if config invalid', () => {
+      const simpleConfig = hlp.readTestConfig('invalid/badBucketName');
+      pluginInstance.options = simpleConfig;
+
+      expect(pluginInstance.error).toHaveBeenCalledTimes(1);
+    });
+
+    it('should prompt user to confirm removal', () => {
+      pluginInstance._removeDeployedResources();
+
+      expect(Confirm).toHaveBeenCalledWith(
+        `Are you sure you want to delete bucket '${pluginInstance.options.bucketName}'?`
+      );
+      expect(Confirm.mock.instances.length).toBe(1);
+      expect(Confirm.mock.instances[0].run).toHaveBeenCalledTimes(1);
     });
 
     // it('should wait 3 seconds before deleting', () => {});
